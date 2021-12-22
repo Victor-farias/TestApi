@@ -18,24 +18,34 @@ namespace TestApi.Auth
     public class DashboardAuthFilter : IDashboardAuthorizationFilter
     {
         private readonly IConfiguration _configuration;
-        private readonly IAuthorizationService _authorizationService;
+        private readonly DbContextOptionsBuilder<ApplicationDbContext> optionsBuilder;
 
         public DashboardAuthFilter(IConfiguration configuration)
         {
             _configuration = configuration;
 
-            var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
+            this.optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
             optionsBuilder.UseSqlServer(_configuration.GetConnectionString("HangfireConnection"));
-            var dbContext = new ApplicationDbContext(optionsBuilder.Options);
-
-            _authorizationService = new AuthorizationService(new UserRepository(dbContext));
         }
 
         public bool Authorize([NotNull] DashboardContext context)
         {
+            if (context.IsReadOnly)
+                return true;
+
             var userName = "Victor_Farias";
 
-            return _authorizationService.HasAdminRole(userName);
+            // Utilizing using statements to dispose non dependecy injected objects
+            using (var dbContext = new ApplicationDbContext(optionsBuilder.Options))
+            {
+                using (var userRepository = new UserRepository(dbContext))
+                {
+                    using (var authorizationService = new AuthorizationService(userRepository))
+                    {
+                        return authorizationService.HasAdminRole(userName);
+                    } 
+                }
+            }
         }
     }
 }
