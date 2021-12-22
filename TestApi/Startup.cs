@@ -66,10 +66,9 @@ namespace TestApi
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IBackgroundJobClient backgroundJobs, 
-            IRecurringJobManager recurringJobManager, IServiceProvider serviceProvider,
-            ApplicationDbContext database)
-        {   
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IBackgroundJobClient backgroundJobs,
+            IRecurringJobManager recurringJobManager, IServiceProvider serviceProvider, IConfiguration configuration)
+        {
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -77,23 +76,21 @@ namespace TestApi
 
             app.UseStaticFiles();
 
-            var authorizationService = new AuthorizationService(new UserRepository(database));
-
             app.UseHangfireDashboard("/hangfireAdmin", new DashboardOptions
             {
-                Authorization = new[] { new DashboardAuthFilter(authorizationService) }
+                Authorization = new[] { new DashboardAuthFilter(configuration) }
             });
 
             app.UseHangfireDashboard("/hangfire", new DashboardOptions
             {
-                Authorization = new[] { new DashboardAuthFilter(authorizationService) },
+                Authorization = new[] { new DashboardAuthFilter(configuration) },
                 IsReadOnlyFunc = (DashboardContext context) => true
             });
 
             backgroundJobs.Enqueue(() => Console.WriteLine("Hello world from Hangfire!"));
             recurringJobManager.AddOrUpdate(
                 "Run every minute",
-                () => serviceProvider.GetService<PrintJob>().Print(), /*Console.WriteLine("Test recurring job"),*/
+                () => serviceProvider.GetService<PrintJob>().Print(),
                 "* * * * *"
                 );
 
