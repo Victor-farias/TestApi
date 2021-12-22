@@ -1,4 +1,6 @@
-﻿namespace TestApi.Services.Interfaces
+﻿using System;
+
+namespace TestApi.Services.Interfaces
 {
     public interface IAuthorizationService
     {
