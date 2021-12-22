@@ -1,8 +1,9 @@
-﻿using TestApi.Models;
+﻿using System;
+using TestApi.Models;
 
 namespace TestApi.Repositories.Interfaces
 {
-    public interface IUserRepository
+    public interface IUserRepository : IDisposable
     {
         User GetUser(string username); 
     }
